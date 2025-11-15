@@ -26,6 +26,7 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { clearExecutionLogs } = useChatStore();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,6 +35,13 @@ export default function Chat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, executionLogs]);
+
+  // Clear execution logs at the start of a new message (when loading begins)
+  useEffect(() => {
+    if (isLoading) {
+      clearExecutionLogs();
+    }
+  }, [isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
