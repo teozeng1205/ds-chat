@@ -410,26 +410,24 @@
 }
 
 .submitButton {
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  border: none;
+  padding: 12px 24px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #1f2937;
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 500;
+  font-size: 14px;
 }
 
 .submitButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
 .submitButton:active:not(:disabled) {
-  transform: translateY(0);
+  background: #f3f4f6;
 }
 
 .submitButton:disabled {

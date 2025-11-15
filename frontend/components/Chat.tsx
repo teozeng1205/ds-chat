@@ -6,7 +6,7 @@ import { sendMessage } from '@/lib/api';
 import { Message } from '@/lib/api';
 import MessageItem from './MessageItem';
 import styles from './Chat.module.css';
-import { Send, Loader2, Menu, Plus, MessageSquare, Settings } from 'lucide-react';
+import { Loader2, Menu, Plus, Settings } from 'lucide-react';
 
 export default function Chat() {
   const {
@@ -217,9 +217,8 @@ export default function Chat() {
                 type="submit"
                 disabled={isLoading || !input.trim() || !sessionId}
                 className={styles.submitButton}
-                title="Send message"
               >
-                <Send size={18} />
+                Send
               </button>
             </form>
           </div>
