@@ -5,8 +5,8 @@ import { useChatStore } from '@/lib/store';
 import { sendMessage } from '@/lib/api';
 import { Message } from '@/lib/api';
 import MessageItem from './MessageItem';
-import ExecutionLog from './ExecutionLog';
-import { Send, Loader2, LogSquare } from 'lucide-react';
+import styles from './Chat.module.css';
+import { Send, Loader2, Menu, Plus, MessageSquare, Settings } from 'lucide-react';
 
 export default function Chat() {
   const {
@@ -20,11 +20,12 @@ export default function Chat() {
     addExecutionLog,
     setLoading,
     setError,
+    setLastMetrics,
   } = useChatStore();
 
   const [input, setInput] = useState('');
-  const [showLogs, setShowLogs] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -32,9 +33,9 @@ export default function Chat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, executionLogs]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || !sessionId || isLoading) return;
 
@@ -50,6 +51,11 @@ export default function Chat() {
       });
 
       addMessage({ role: 'assistant', content: response.response });
+      setLastMetrics({
+        tools: response.tools,
+        tokens: response.tokens,
+        time_ms: response.time_ms,
+      });
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to get response';
       setError(errorMsg);
@@ -62,94 +68,130 @@ export default function Chat() {
     }
   };
 
-  const examplePrompts = [
-    'What are the top site issues today?',
-    'Show me issues for provider QL2',
-    'What issues have increased this month?',
-  ];
-
   return (
-    <div className="h-screen flex flex-col bg-background text-foreground">
-      {/* Header */}
-      <div className="border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div>
-          <h1 className="text-xl font-semibold">Analytics Chat</h1>
-          <p className="text-xs text-muted-foreground">Query your data with natural language</p>
+    <div className={styles.appContainer}>
+      {/* Sidebar */}
+      <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : styles.sidebarClosed}`}>
+        <div className={styles.sidebarHeader}>
+          <button
+            className={styles.newChatButton}
+            title="Start a new chat"
+          >
+            <Plus size={20} />
+            <span>New chat</span>
+          </button>
         </div>
-        <button
-          onClick={() => setShowLogs(!showLogs)}
-          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            showLogs
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:bg-secondary'
-          }`}
-          title="Toggle execution logs"
-        >
-          <LogSquare size={16} />
-          {showLogs ? 'Hide' : 'Show'} Logs
-        </button>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Messages Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className={styles.sidebarContent}>
+          <h3 className={styles.sidebarSection}>Chat History</h3>
+          {/* Placeholder for chat history */}
+          <p className={styles.emptyHistory}>No chat history yet</p>
+        </div>
+
+        <div className={styles.sidebarFooter}>
+          <button className={styles.sidebarButton} title="Settings">
+            <Settings size={18} />
+            <span>Settings</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Chat Area */}
+      <div className={styles.chatContainer}>
+        <div className={styles.chatMain}>
+          {/* Top Bar with Menu */}
+          <div className={styles.topBar}>
+            <button
+              className={styles.menuButton}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title="Toggle sidebar"
+            >
+              <Menu size={20} />
+            </button>
+            <h1 className={styles.modelSelector}>ds-chat</h1>
+            <div className={styles.topBarRight}></div>
+          </div>
+
+          {/* Messages Area */}
+          <div className={styles.messagesContainer}>
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto text-center">
-                <div className="mb-6">
-                  <div className="text-6xl mb-4">💬</div>
-                  <h2 className="text-2xl font-semibold mb-2">Start Exploring Your Data</h2>
-                  <p className="text-muted-foreground">Ask questions about your analytics in natural language</p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 w-full">
-                  {examplePrompts.map((prompt, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setInput(prompt)}
-                      className="text-left p-4 rounded-lg border border-border hover:border-primary hover:bg-secondary transition-all text-sm"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
+              <div className={styles.emptyState}>
+                <h2>Start Exploring Your Data</h2>
+                <p>Ask questions about your analytics in natural language</p>
+                <div className={styles.examples}>
+                  <button
+                    onClick={() => setInput('What are the top site issues today?')}
+                    className={styles.exampleButton}
+                  >
+                    What are the top site issues today?
+                  </button>
+                  <button
+                    onClick={() => setInput('Show me issues for provider QL2')}
+                    className={styles.exampleButton}
+                  >
+                    Show me issues for provider QL2
+                  </button>
+                  <button
+                    onClick={() => setInput('What issues have increased this month?')}
+                    className={styles.exampleButton}
+                  >
+                    What issues have increased this month?
+                  </button>
                 </div>
               </div>
             ) : (
-              <div className="max-w-2xl mx-auto w-full space-y-4">
+              <div className={styles.messages}>
                 {messages.map((msg, idx) => (
                   <MessageItem key={idx} message={msg} />
                 ))}
 
                 {isLoading && (
-                  <div className="flex gap-3 p-4 bg-secondary rounded-lg">
-                    <Loader2 size={20} className="animate-spin text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-sm">Processing your request...</p>
-                      <p className="text-xs text-muted-foreground">This may take 10-30 seconds</p>
+                  <div className={styles.loadingMessage}>
+                    <div className={styles.loadingContent}>
+                      <Loader2 size={16} className={styles.spinner} />
+                      <span>Processing your request...</span>
                     </div>
                   </div>
                 )}
 
                 {error && (
-                  <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
-                    <p className="text-sm font-medium text-destructive">{error}</p>
+                  <div className={styles.errorMessage}>
+                    <strong>Error:</strong> {error}
+                  </div>
+                )}
+
+                {executionLogs.length > 0 && (
+                  <div className={styles.logsSection}>
+                    <div className={styles.logsTitle}>Execution Logs</div>
+                    {executionLogs.map((log, idx) => (
+                      <div key={idx} className={styles.logItem}>
+                        <div className={styles.logLevel}>[{log.level}]</div>
+                        <div className={styles.logSource}>{log.source}</div>
+                        <div className={styles.logMessage}>{log.message}</div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
                 {lastMetrics && !isLoading && (
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-secondary rounded-lg text-sm">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Tools Used</p>
-                      <p className="font-mono text-sm">{Object.entries(lastMetrics.tools).map(([k, v]) => `${k}(${v})`).join(', ')}</p>
+                  <div className={styles.metricsBar}>
+                    <div className={styles.metric}>
+                      <span className={styles.label}>Tools:</span>
+                      <span className={styles.value}>
+                        {Object.entries(lastMetrics.tools)
+                          .map(([k, v]) => `${k}(${v})`)
+                          .join(', ')}
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Tokens</p>
-                      <p className="font-mono text-sm">{lastMetrics.tokens.total_tokens.toLocaleString()}</p>
+                    <div className={styles.metric}>
+                      <span className={styles.label}>Tokens:</span>
+                      <span className={styles.value}>
+                        {lastMetrics.tokens.total_tokens.toLocaleString()}
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Time</p>
-                      <p className="font-mono text-sm">{(lastMetrics.time_ms / 1000).toFixed(2)}s</p>
+                    <div className={styles.metric}>
+                      <span className={styles.label}>Time:</span>
+                      <span className={styles.value}>{lastMetrics.time_ms.toFixed(1)}ms</span>
                     </div>
                   </div>
                 )}
@@ -160,36 +202,28 @@ export default function Chat() {
           </div>
 
           {/* Input Area */}
-          <div className="border-t border-border p-4 bg-background">
-            <div className="max-w-2xl mx-auto">
-              <form onSubmit={handleSubmit} className="relative">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask a question about your data..."
-                  disabled={isLoading || !sessionId}
-                  className="w-full bg-secondary border border-border rounded-full py-3 px-4 pr-12 text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading || !input.trim() || !sessionId}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 rounded-full bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
-                  title="Send message"
-                >
-                  <Send size={18} />
-                </button>
-              </form>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                Powered by FastAPI + OpenAI Agents + MCP
-              </p>
-            </div>
+          <div className={styles.inputContainer}>
+            <form onSubmit={handleSubmit} className={styles.form}>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask a question about your data..."
+                disabled={isLoading || !sessionId}
+                className={styles.input}
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim() || !sessionId}
+                className={styles.submitButton}
+                title="Send message"
+              >
+                <Send size={18} />
+              </button>
+            </form>
           </div>
         </div>
-
-        {/* Logs Panel */}
-        {showLogs && <ExecutionLog logs={executionLogs} />}
       </div>
     </div>
   );
