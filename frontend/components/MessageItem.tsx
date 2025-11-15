@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Message } from '@/lib/api';
-import styles from './MessageItem.module.css';
 import { User, Bot } from 'lucide-react';
 
 interface MessageItemProps {
@@ -21,7 +20,7 @@ export default function MessageItem({ message }: MessageItemProps) {
       if (idx % 2 === 1) {
         // Code block
         return (
-          <pre key={idx} className={styles.codeBlock}>
+          <pre key={idx} className="bg-black dark:bg-gray-900 text-white dark:text-gray-100 rounded-lg p-3 overflow-x-auto text-sm font-mono my-2">
             <code>{part.trim()}</code>
           </pre>
         );
@@ -38,13 +37,13 @@ export default function MessageItem({ message }: MessageItemProps) {
             // Italic
             formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
             // Links
-            formatted = formatted.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
+            formatted = formatted.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">$1</a>');
 
             return (
               <p
                 key={lineIdx}
                 dangerouslySetInnerHTML={{ __html: formatted }}
-                className={styles.paragraph}
+                className="leading-relaxed my-1"
               />
             );
           })}
@@ -54,11 +53,31 @@ export default function MessageItem({ message }: MessageItemProps) {
   };
 
   return (
-    <div className={`${styles.messageWrapper} ${isUser ? styles.user : styles.assistant}`}>
-      <div className={styles.messageContent}>
-        {!isUser && <Bot size={16} className={styles.icon} />}
-        {isUser && <User size={16} className={styles.icon} />}
-        <div className={styles.text}>{renderContent(message.content)}</div>
+    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+      {/* Avatar */}
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+        isUser
+          ? 'bg-secondary text-secondary-foreground'
+          : 'bg-secondary text-secondary-foreground'
+      }`}>
+        {isUser ? (
+          <User size={16} />
+        ) : (
+          <span className="text-sm">🤖</span>
+        )}
+      </div>
+
+      {/* Message Content */}
+      <div className={`flex-1 flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+        <div className={`p-3 rounded-lg max-w-[80%] break-words ${
+          isUser
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-card text-card-foreground border border-border'
+        }`}>
+          <div className="text-sm leading-relaxed">
+            {renderContent(message.content)}
+          </div>
+        </div>
       </div>
     </div>
   );

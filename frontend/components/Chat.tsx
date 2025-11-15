@@ -6,8 +6,7 @@ import { sendMessage } from '@/lib/api';
 import { Message } from '@/lib/api';
 import MessageItem from './MessageItem';
 import ExecutionLog from './ExecutionLog';
-import styles from './Chat.module.css';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Menu, X } from 'lucide-react';
 
 export default function Chat() {
   const {
@@ -70,17 +69,21 @@ export default function Chat() {
   };
 
   return (
-    <div className={styles.chatContainer}>
-      <div className={styles.chatMain}>
+    <div className="flex w-full h-full bg-background text-foreground">
+      <div className="flex flex-col w-full">
         {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.headerContent}>
-            <h1>Analytics Chat</h1>
-            <p>Query your database with natural language</p>
+        <div className="sticky top-0 z-20 border-b border-border bg-background px-4 py-3 flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Analytics Chat</h1>
+            <p className="text-sm text-muted-foreground">Query your database with natural language</p>
           </div>
           <button
-            className={`${styles.logsButton} ${showLogs ? styles.active : ''}`}
             onClick={() => setShowLogs(!showLogs)}
+            className={`rounded-full h-9 px-4 font-medium text-sm transition-colors ${
+              showLogs
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
             title="Toggle execution logs"
           >
             {showLogs ? '✓ Logs' : 'Logs'}
@@ -88,73 +91,82 @@ export default function Chat() {
         </div>
 
         {/* Messages Area */}
-        <div className={styles.messagesContainer}>
+        <div className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>💬</div>
-              <h2>Start Exploring Your Data</h2>
-              <p>Ask questions about your analytics in natural language</p>
-              <div className={styles.examples}>
+            <div className="flex flex-col items-center justify-center h-full p-4">
+              <div className="text-6xl mb-4">✨</div>
+              <h2 className="text-xl font-semibold mb-2">Start Exploring Your Data</h2>
+              <p className="text-muted-foreground mb-8 text-center">
+                Ask questions about your analytics in natural language
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md">
                 <button
                   onClick={() => setInput('What are the top site issues today?')}
-                  className={styles.exampleButton}
+                  className="p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-accent-foreground hover:bg-accent transition-colors text-sm text-left"
                 >
                   What are the top site issues today?
                 </button>
                 <button
                   onClick={() => setInput('Show me issues for provider QL2')}
-                  className={styles.exampleButton}
+                  className="p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-accent-foreground hover:bg-accent transition-colors text-sm text-left"
                 >
                   Show me issues for provider QL2
                 </button>
                 <button
                   onClick={() => setInput('What issues have increased this month?')}
-                  className={styles.exampleButton}
+                  className="p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-accent-foreground hover:bg-accent transition-colors text-sm text-left"
                 >
                   What issues have increased this month?
+                </button>
+                <button
+                  onClick={() => setInput('Compare issue trends over time')}
+                  className="p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-accent-foreground hover:bg-accent transition-colors text-sm text-left"
+                >
+                  Compare issue trends over time
                 </button>
               </div>
             </div>
           ) : (
-            <div className={styles.messages}>
+            <div className="p-4 space-y-4">
               {messages.map((msg, idx) => (
                 <MessageItem key={idx} message={msg} />
               ))}
 
               {isLoading && (
-                <div className={styles.loadingMessage}>
-                  <div className={styles.loadingContent}>
-                    <Loader2 size={16} className={styles.spinner} />
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">🤖</span>
+                  </div>
+                  <div className="flex gap-2 items-center text-muted-foreground">
+                    <Loader2 size={16} className="animate-spin" />
                     <span>Processing your request...</span>
                   </div>
                 </div>
               )}
 
               {error && (
-                <div className={styles.errorMessage}>
+                <div className="p-4 rounded-lg bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300">
                   <strong>Error:</strong> {error}
                 </div>
               )}
 
               {lastMetrics && !isLoading && (
-                <div className={styles.metricsBar}>
-                  <div className={styles.metric}>
-                    <span className={styles.label}>Tools:</span>
-                    <span className={styles.value}>
+                <div className="p-3 rounded-lg bg-secondary text-secondary-foreground text-sm space-y-2 border border-border">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Tools:</span>
+                    <span>
                       {Object.entries(lastMetrics.tools)
                         .map(([k, v]) => `${k}(${v})`)
                         .join(', ')}
                     </span>
                   </div>
-                  <div className={styles.metric}>
-                    <span className={styles.label}>Tokens:</span>
-                    <span className={styles.value}>
-                      {lastMetrics.tokens.total_tokens.toLocaleString()}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Tokens:</span>
+                    <span>{lastMetrics.tokens.total_tokens.toLocaleString()}</span>
                   </div>
-                  <div className={styles.metric}>
-                    <span className={styles.label}>Time:</span>
-                    <span className={styles.value}>{lastMetrics.time_ms.toFixed(1)}ms</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Time:</span>
+                    <span>{lastMetrics.time_ms.toFixed(1)}ms</span>
                   </div>
                 </div>
               )}
@@ -165,27 +177,27 @@ export default function Chat() {
         </div>
 
         {/* Input Area */}
-        <div className={styles.inputContainer}>
-          <form onSubmit={handleSubmit} className={styles.form}>
+        <div className="border-t border-border bg-background px-4 py-4 space-y-2">
+          <form onSubmit={handleSubmit} className="flex gap-3">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask a question about your data..."
               disabled={isLoading || !sessionId}
-              className={styles.input}
+              className="flex-1 rounded-3xl px-4 py-2 bg-input text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               autoFocus
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim() || !sessionId}
-              className={styles.submitButton}
+              className="rounded-full h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
               title="Send message"
             >
               <Send size={18} />
             </button>
           </form>
-          <p className={styles.footer}>
+          <p className="text-xs text-muted-foreground text-center">
             Powered by FastAPI + OpenAI Agents + MCP
           </p>
         </div>
