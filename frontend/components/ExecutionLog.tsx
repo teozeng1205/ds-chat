@@ -8,7 +8,7 @@ interface ExecutionLogProps {
   logs: ExecutionLog[];
 }
 
-export default function ExecutionLogComponent({ logs }: ExecutionLogProps) {
+export default function ExecutionLog({ logs }: ExecutionLogProps) {
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
