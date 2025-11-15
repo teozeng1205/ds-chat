@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  ds-chat-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      AWS_PROFILE: 3VDEV
+      AWS_DEFAULT_REGION: us-east-1
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      PYTHONPATH: /app/../ds-agentic-workflows/ds-agents:/app/../ds-agentic-workflows/ds-mcp/src
+    volumes:
+      # Mount credentials and config
+      - ~/.aws:/home/app/.aws:ro
+      - ~/.aws/sso/cache:/home/app/.aws/sso/cache:rw
+    working_dir: /app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    command: python -m uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
