@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { ExecutionLog } from '@/lib/api';
-import { AlertCircle, Info, CheckCircle, AlertTriangle, ChevronLeft } from 'lucide-react';
+import { AlertCircle, Info, AlertTriangle, MessageSquare } from 'lucide-react';
 
 interface ExecutionLogProps {
   logs: ExecutionLog[];
@@ -19,108 +19,93 @@ export default function ExecutionLogComponent({ logs }: ExecutionLogProps) {
     scrollToBottom();
   }, [logs]);
 
-  const getLogColor = (level: string) => {
-    switch (level) {
-      case 'ERROR':
-        return 'text-red-600 dark:text-red-400';
-      case 'WARNING':
-        return 'text-amber-600 dark:text-amber-400';
-      case 'INFO':
-        return 'text-blue-600 dark:text-blue-400';
-      case 'SUCCESS':
-        return 'text-green-600 dark:text-green-400';
-      default:
-        return 'text-gray-600 dark:text-gray-400';
-    }
-  };
-
-  const getLogBgColor = (level: string) => {
-    switch (level) {
-      case 'ERROR':
-        return 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50';
-      case 'WARNING':
-        return 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50';
-      case 'INFO':
-        return 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50';
-      case 'SUCCESS':
-        return 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900/50';
-      default:
-        return 'bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-900/50';
-    }
-  };
-
   const getLogIcon = (level: string) => {
     switch (level) {
       case 'ERROR':
-        return <AlertCircle size={16} />;
+        return <AlertCircle size={16} className="flex-shrink-0" />;
       case 'WARNING':
-        return <AlertTriangle size={16} />;
-      case 'SUCCESS':
-        return <CheckCircle size={16} />;
+        return <AlertTriangle size={16} className="flex-shrink-0" />;
       case 'INFO':
+        return <Info size={16} className="flex-shrink-0" />;
       default:
-        return <Info size={16} />;
+        return <MessageSquare size={16} className="flex-shrink-0" />;
+    }
+  };
+
+  const getLogColor = (level: string) => {
+    switch (level) {
+      case 'ERROR':
+        return {
+          bg: 'bg-destructive/10',
+          border: 'border-destructive/30',
+          text: 'text-destructive',
+          icon: 'text-destructive',
+        };
+      case 'WARNING':
+        return {
+          bg: 'bg-yellow-500/10',
+          border: 'border-yellow-500/30',
+          text: 'text-yellow-600 dark:text-yellow-400',
+          icon: 'text-yellow-600 dark:text-yellow-400',
+        };
+      case 'INFO':
+        return {
+          bg: 'bg-blue-500/10',
+          border: 'border-blue-500/30',
+          text: 'text-blue-600 dark:text-blue-400',
+          icon: 'text-blue-600 dark:text-blue-400',
+        };
+      default:
+        return {
+          bg: 'bg-secondary',
+          border: 'border-border',
+          text: 'text-muted-foreground',
+          icon: 'text-muted-foreground',
+        };
     }
   };
 
   return (
-    <div className="w-80 bg-background border-l border-border flex flex-col h-full overflow-hidden shadow-lg">
+    <div className="w-80 border-l border-border bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-b border-border p-4 bg-background sticky top-0 z-10">
-        <h2 className="text-lg font-semibold text-foreground">Execution Log</h2>
-        <p className="text-xs text-muted-foreground mt-1">Agent operations and system events</p>
+      <div className="border-b border-border px-4 py-3 flex-shrink-0">
+        <h2 className="font-semibold text-sm">Execution Logs</h2>
+        <p className="text-xs text-muted-foreground">Agent operations and events</p>
       </div>
 
       {/* Logs Container */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
         {logs.length === 0 ? (
-          <div className="flex items-center justify-center h-full p-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              No logs yet. Send a message to see execution details.
-            </p>
+          <div className="h-full flex items-center justify-center text-center py-8">
+            <p className="text-xs text-muted-foreground">No logs yet. Send a message to see execution details.</p>
           </div>
         ) : (
-          <div className="p-3 space-y-2">
-            {logs.map((log, idx) => (
-              <div
-                key={idx}
-                className={`p-3 rounded-lg border border-l-4 text-sm ${getLogBgColor(log.level)}`}
-                style={{
-                  borderLeftColor: log.level === 'ERROR' ? '#ef4444' :
-                                  log.level === 'WARNING' ? '#f59e0b' :
-                                  log.level === 'SUCCESS' ? '#10b981' :
-                                  '#60a5fa'
-                }}
-              >
-                {/* Log Header: Icon + Level + Source */}
-                <div className="flex items-center gap-2 mb-1">
-                  <div className={`flex-shrink-0 ${getLogColor(log.level)}`}>
-                    {getLogIcon(log.level)}
+          <>
+            {logs.map((log, idx) => {
+              const colors = getLogColor(log.level);
+              return (
+                <div
+                  key={idx}
+                  className={`rounded-md border p-3 text-xs space-y-1 ${colors.bg} ${colors.border} border`}
+                >
+                  <div className="flex items-start gap-2">
+                    <div className={colors.icon}>{getLogIcon(log.level)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`font-medium ${colors.text}`}>{log.level}</span>
+                        <span className="text-muted-foreground">[{log.source}]</span>
+                      </div>
+                      <p className="text-muted-foreground break-words">{log.message}</p>
+                      <p className="text-muted-foreground/60 mt-1">
+                        {new Date(log.timestamp).toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
-                  <span className={`font-semibold text-xs uppercase tracking-wider ${getLogColor(log.level)}`}>
-                    {log.level}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    [{log.source}]
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-auto">
-                    {new Date(log.timestamp).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                      hour12: false
-                    })}
-                  </span>
                 </div>
-
-                {/* Log Message */}
-                <div className="text-xs leading-relaxed text-foreground font-mono">
-                  {log.message}
-                </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={logsEndRef} />
-          </div>
+          </>
         )}
       </div>
     </div>

@@ -3,6 +3,8 @@
 import React from 'react';
 import { Message } from '@/lib/api';
 import { User, Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MessageItemProps {
   message: Message;
@@ -11,72 +13,47 @@ interface MessageItemProps {
 export default function MessageItem({ message }: MessageItemProps) {
   const isUser = message.role === 'user';
 
-  // Simple markdown rendering
-  const renderContent = (content: string) => {
-    // Handle code blocks
-    const parts = content.split(/```([^`]*?)```/g);
-
-    return parts.map((part, idx) => {
-      if (idx % 2 === 1) {
-        // Code block
-        return (
-          <pre key={idx} className="bg-black dark:bg-gray-900 text-white dark:text-gray-100 rounded-lg p-3 overflow-x-auto text-sm font-mono my-2">
-            <code>{part.trim()}</code>
-          </pre>
-        );
-      }
-
-      // Regular text with markdown formatting
-      return (
-        <div key={idx}>
-          {part.split('\n').map((line, lineIdx) => {
-            if (!line.trim()) return <br key={lineIdx} />;
-
-            // Bold
-            let formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            // Italic
-            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            // Links
-            formatted = formatted.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">$1</a>');
-
-            return (
-              <p
-                key={lineIdx}
-                dangerouslySetInnerHTML={{ __html: formatted }}
-                className="leading-relaxed my-1"
-              />
-            );
-          })}
-        </div>
-      );
-    });
-  };
-
   return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-      {/* Avatar */}
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-        isUser
-          ? 'bg-secondary text-secondary-foreground'
-          : 'bg-secondary text-secondary-foreground'
-      }`}>
+    <div className={`flex gap-3 p-4 rounded-lg ${isUser ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+      <div className="flex-shrink-0 mt-0.5">
         {isUser ? (
-          <User size={16} />
+          <User size={18} className="text-primary-foreground" />
         ) : (
-          <span className="text-sm">🤖</span>
+          <Bot size={18} className="text-muted-foreground" />
         )}
       </div>
-
-      {/* Message Content */}
-      <div className={`flex-1 flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
-        <div className={`p-3 rounded-lg max-w-[80%] break-words ${
-          isUser
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-card text-card-foreground border border-border'
-        }`}>
-          <div className="text-sm leading-relaxed">
-            {renderContent(message.content)}
-          </div>
+      <div className="flex-1 overflow-hidden">
+        <div className={`text-sm leading-relaxed prose prose-sm max-w-none ${isUser ? 'text-primary-foreground' : 'text-foreground'}`}>
+          {isUser ? (
+            <p>{message.content}</p>
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-sm font-bold mb-2">{children}</h3>,
+                ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                li: ({ children }) => <li className="text-sm">{children}</li>,
+                code: ({ inline, children }) =>
+                  inline ? (
+                    <code className="bg-primary/10 px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
+                  ) : (
+                    <code className="block bg-secondary border border-border rounded p-3 overflow-x-auto text-xs font-mono my-2">{children}</code>
+                  ),
+                pre: ({ children }) => <pre className="bg-secondary border border-border rounded p-3 overflow-x-auto my-2">{children}</pre>,
+                table: ({ children }) => <table className="border-collapse border border-border my-2 text-xs">{children}</table>,
+                th: ({ children }) => <th className="border border-border px-2 py-1 bg-secondary text-left">{children}</th>,
+                td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
+                blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic my-2 text-muted-foreground">{children}</blockquote>,
+                a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{children}</a>,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          )}
         </div>
       </div>
     </div>

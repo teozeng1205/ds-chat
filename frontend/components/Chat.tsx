@@ -6,7 +6,7 @@ import { sendMessage } from '@/lib/api';
 import { Message } from '@/lib/api';
 import MessageItem from './MessageItem';
 import ExecutionLog from './ExecutionLog';
-import { Send, Loader2, Menu, X } from 'lucide-react';
+import { Send, Loader2, LogSquare } from 'lucide-react';
 
 export default function Chat() {
   const {
@@ -20,12 +20,11 @@ export default function Chat() {
     addExecutionLog,
     setLoading,
     setError,
-    setLastMetrics,
   } = useChatStore();
 
   const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showLogs, setShowLogs] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -33,9 +32,9 @@ export default function Chat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, executionLogs]);
+  }, [messages, isLoading]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim() || !sessionId || isLoading) return;
 
@@ -51,11 +50,6 @@ export default function Chat() {
       });
 
       addMessage({ role: 'assistant', content: response.response });
-      setLastMetrics({
-        tools: response.tools,
-        tokens: response.tokens,
-        time_ms: response.time_ms,
-      });
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to get response';
       setError(errorMsg);
@@ -68,143 +62,135 @@ export default function Chat() {
     }
   };
 
+  const examplePrompts = [
+    'What are the top site issues today?',
+    'Show me issues for provider QL2',
+    'What issues have increased this month?',
+  ];
+
   return (
-    <div className="flex w-full h-full bg-background text-foreground">
-      <div className="flex flex-col w-full">
-        {/* Header */}
-        <div className="sticky top-0 z-20 border-b border-border bg-background px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Analytics Chat</h1>
-            <p className="text-sm text-muted-foreground">Query your database with natural language</p>
-          </div>
-          <button
-            onClick={() => setShowLogs(!showLogs)}
-            className={`rounded-full h-9 px-4 font-medium text-sm transition-colors ${
-              showLogs
-                ? 'bg-accent text-accent-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
-            title="Toggle execution logs"
-          >
-            {showLogs ? '✓ Logs' : 'Logs'}
-          </button>
+    <div className="h-screen flex flex-col bg-background text-foreground">
+      {/* Header */}
+      <div className="border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <div>
+          <h1 className="text-xl font-semibold">Analytics Chat</h1>
+          <p className="text-xs text-muted-foreground">Query your data with natural language</p>
         </div>
-
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto">
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-4">
-              <div className="text-6xl mb-4">✨</div>
-              <h2 className="text-xl font-semibold mb-2">Start Exploring Your Data</h2>
-              <p className="text-muted-foreground mb-8 text-center">
-                Ask questions about your analytics in natural language
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md">
-                <button
-                  onClick={() => setInput('What are the top site issues today?')}
-                  className="p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-accent-foreground hover:bg-accent transition-colors text-sm text-left"
-                >
-                  What are the top site issues today?
-                </button>
-                <button
-                  onClick={() => setInput('Show me issues for provider QL2')}
-                  className="p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-accent-foreground hover:bg-accent transition-colors text-sm text-left"
-                >
-                  Show me issues for provider QL2
-                </button>
-                <button
-                  onClick={() => setInput('What issues have increased this month?')}
-                  className="p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-accent-foreground hover:bg-accent transition-colors text-sm text-left"
-                >
-                  What issues have increased this month?
-                </button>
-                <button
-                  onClick={() => setInput('Compare issue trends over time')}
-                  className="p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-accent-foreground hover:bg-accent transition-colors text-sm text-left"
-                >
-                  Compare issue trends over time
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 space-y-4">
-              {messages.map((msg, idx) => (
-                <MessageItem key={idx} message={msg} />
-              ))}
-
-              {isLoading && (
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm">🤖</span>
-                  </div>
-                  <div className="flex gap-2 items-center text-muted-foreground">
-                    <Loader2 size={16} className="animate-spin" />
-                    <span>Processing your request...</span>
-                  </div>
-                </div>
-              )}
-
-              {error && (
-                <div className="p-4 rounded-lg bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300">
-                  <strong>Error:</strong> {error}
-                </div>
-              )}
-
-              {lastMetrics && !isLoading && (
-                <div className="p-3 rounded-lg bg-secondary text-secondary-foreground text-sm space-y-2 border border-border">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">Tools:</span>
-                    <span>
-                      {Object.entries(lastMetrics.tools)
-                        .map(([k, v]) => `${k}(${v})`)
-                        .join(', ')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">Tokens:</span>
-                    <span>{lastMetrics.tokens.total_tokens.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">Time:</span>
-                    <span>{lastMetrics.time_ms.toFixed(1)}ms</span>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
-
-        {/* Input Area */}
-        <div className="border-t border-border bg-background px-4 py-4 space-y-2">
-          <form onSubmit={handleSubmit} className="flex gap-3">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a question about your data..."
-              disabled={isLoading || !sessionId}
-              className="flex-1 rounded-3xl px-4 py-2 bg-input text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              autoFocus
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim() || !sessionId}
-              className="rounded-full h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-              title="Send message"
-            >
-              <Send size={18} />
-            </button>
-          </form>
-          <p className="text-xs text-muted-foreground text-center">
-            Powered by FastAPI + OpenAI Agents + MCP
-          </p>
-        </div>
+        <button
+          onClick={() => setShowLogs(!showLogs)}
+          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            showLogs
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-secondary'
+          }`}
+          title="Toggle execution logs"
+        >
+          <LogSquare size={16} />
+          {showLogs ? 'Hide' : 'Show'} Logs
+        </button>
       </div>
 
-      {/* Execution Logs Panel */}
-      {showLogs && <ExecutionLog logs={executionLogs} />}
+      {/* Main Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Messages Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-4 py-6">
+            {messages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto text-center">
+                <div className="mb-6">
+                  <div className="text-6xl mb-4">💬</div>
+                  <h2 className="text-2xl font-semibold mb-2">Start Exploring Your Data</h2>
+                  <p className="text-muted-foreground">Ask questions about your analytics in natural language</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 w-full">
+                  {examplePrompts.map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setInput(prompt)}
+                      className="text-left p-4 rounded-lg border border-border hover:border-primary hover:bg-secondary transition-all text-sm"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="max-w-2xl mx-auto w-full space-y-4">
+                {messages.map((msg, idx) => (
+                  <MessageItem key={idx} message={msg} />
+                ))}
+
+                {isLoading && (
+                  <div className="flex gap-3 p-4 bg-secondary rounded-lg">
+                    <Loader2 size={20} className="animate-spin text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm">Processing your request...</p>
+                      <p className="text-xs text-muted-foreground">This may take 10-30 seconds</p>
+                    </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                    <p className="text-sm font-medium text-destructive">{error}</p>
+                  </div>
+                )}
+
+                {lastMetrics && !isLoading && (
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-secondary rounded-lg text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Tools Used</p>
+                      <p className="font-mono text-sm">{Object.entries(lastMetrics.tools).map(([k, v]) => `${k}(${v})`).join(', ')}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Tokens</p>
+                      <p className="font-mono text-sm">{lastMetrics.tokens.total_tokens.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Time</p>
+                      <p className="font-mono text-sm">{(lastMetrics.time_ms / 1000).toFixed(2)}s</p>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Input Area */}
+          <div className="border-t border-border p-4 bg-background">
+            <div className="max-w-2xl mx-auto">
+              <form onSubmit={handleSubmit} className="relative">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask a question about your data..."
+                  disabled={isLoading || !sessionId}
+                  className="w-full bg-secondary border border-border rounded-full py-3 px-4 pr-12 text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !input.trim() || !sessionId}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 rounded-full bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  title="Send message"
+                >
+                  <Send size={18} />
+                </button>
+              </form>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Powered by FastAPI + OpenAI Agents + MCP
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Logs Panel */}
+        {showLogs && <ExecutionLog logs={executionLogs} />}
+      </div>
     </div>
   );
 }
