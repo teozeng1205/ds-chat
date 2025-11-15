@@ -129,7 +129,7 @@ async def health_check():
     """Check if backend is healthy and ready."""
     return HealthResponse(
         status="ok",
-        agent_initialized=_agent_runner is not None and _agent_runner.agent_instance is not None,
+        agent_initialized=_agent_runner is not None and _agent_runner._executor.agent_instance is not None,
     )
 
 
@@ -148,7 +148,7 @@ async def chat(request: ChatRequest):
     if not _session_manager:
         raise HTTPException(status_code=503, detail="Session manager not initialized")
 
-    if not _agent_runner or not _agent_runner.agent_instance:
+    if not _agent_runner or not _agent_runner._executor.agent_instance:
         raise HTTPException(
             status_code=503,
             detail="Agent not initialized. Check AWS credentials and VPN connection."
